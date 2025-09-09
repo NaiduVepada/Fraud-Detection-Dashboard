@@ -25,5 +25,5 @@ def get_transactions():
         {"id": 5, "amount": 50, "hour": 18, "fraud": False},
         {"id": 6, "amount": 2000, "hour": 22, "fraud": True},
         {"id": 7, "amount": 999, "hour": 9, "fraud": False},
+    return {"transactions": data} 
     ]
-    return {"transactions": data}
