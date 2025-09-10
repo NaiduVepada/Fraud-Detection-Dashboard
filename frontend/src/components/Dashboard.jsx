@@ -1,124 +1,92 @@
-import React, { useState } from "react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  Legend,
-} from "recharts";
+import React, { useEffect, useState } from "react";
 
-const Dashboard = () => {
-  // Sample transaction data
-  const [transactions] = useState([
-    { id: 1, amount: 120, hour: "10:00", status: "Safe" },
-    { id: 2, amount: 4500, hour: "2:00", status: "Fraud" },
-    { id: 3, amount: 300, hour: "15:00", status: "Safe" },
-    { id: 4, amount: 7000, hour: "1:00", status: "Fraud" },
-    { id: 5, amount: 50, hour: "18:00", status: "Safe" },
-    { id: 6, amount: 2000, hour: "22:00", status: "Fraud" },
-    { id: 7, amount: 999, hour: "9:00", status: "Safe" },
-  ]);
+export default function Dashboard() {
+  const [transactions, setTransactions] = useState([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const limit = 10; // rows per page
 
-  // Stats
-  const total = transactions.length;
-  const fraudCount = transactions.filter((t) => t.status === "Fraud").length;
-  const safeCount = total - fraudCount;
+  const fetchData = async () => {
+    const skip = (page - 1) * limit;
+    const res = await fetch(
+      `http://127.0.0.1:8000/transactions?skip=${skip}&limit=${limit}`
+    );
+    const json = await res.json();
+    setTransactions(json.data);
+    setTotal(json.total);
+  };
 
-  const chartData = [
-    { name: "Fraud", value: fraudCount },
-    { name: "Safe", value: safeCount },
-  ];
+  useEffect(() => {
+    fetchData();
+  }, [page]);
 
-  const COLORS = ["#EF4444", "#22C55E"];
+  const totalPages = Math.ceil(total / limit);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      {/* Navbar */}
-      <header className="bg-white shadow p-4 mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">
+    <div
+      className="min-h-screen flex justify-center items-center bg-cover bg-center p-6"
+      style={{
+        backgroundImage:
+          "url('https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1470&q=80')",
+      }}
+    >
+      <div className="w-full max-w-4xl bg-white/95 rounded-2xl shadow-2xl p-6 backdrop-blur-md">
+        <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">
           🚀 Fraud Detection Dashboard
         </h1>
-        <p className="text-gray-500">Monitor transactions in real-time</p>
-      </header>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div className="bg-white shadow rounded-xl p-4 text-center">
-          <h2 className="text-lg font-semibold">Total Transactions</h2>
-          <p className="text-2xl font-bold">{total}</p>
-        </div>
-        <div className="bg-white shadow rounded-xl p-4 text-center">
-          <h2 className="text-lg font-semibold text-red-600">Fraud Cases</h2>
-          <p className="text-2xl font-bold text-red-600">{fraudCount}</p>
-        </div>
-        <div className="bg-white shadow rounded-xl p-4 text-center">
-          <h2 className="text-lg font-semibold text-green-600">Safe Cases</h2>
-          <p className="text-2xl font-bold text-green-600">{safeCount}</p>
-        </div>
-      </div>
-
-      {/* Charts + Transactions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Chart */}
-        <div className="bg-white shadow rounded-xl p-6">
-          <h2 className="text-xl font-bold mb-4">Fraud vs Safe Ratio</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={chartData}
-                dataKey="value"
-                nameKey="name"
-                outerRadius={100}
-                fill="#8884d8"
-                label
+        {/* Cards Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 justify-center">
+          {transactions.map((t, index) => (
+            <div
+              key={index}
+              className="p-4 bg-white rounded-xl shadow-md border border-gray-200 hover:shadow-lg transition"
+            >
+              <h2 className="text-lg font-semibold text-gray-700 mb-2 text-center">
+                Transaction #{(page - 1) * limit + index + 1}
+              </h2>
+              <p className="text-gray-600">
+                <span className="font-medium">Amount:</span> ${t.amount}
+              </p>
+              <p className="text-gray-600">
+                <span className="font-medium">Hour:</span> {t.hour}:00
+              </p>
+              <p className="text-gray-600">
+                <span className="font-medium">Device Trust:</span>{" "}
+                {t.device_trust}
+              </p>
+              <p
+                className={`mt-2 font-bold text-center ${
+                  t.fraud === 1 ? "text-red-600" : "text-green-600"
+                }`}
               >
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index]} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
+                {t.fraud === 1 ? "🚨 Fraud Detected" : "✅ Safe"}
+              </p>
+            </div>
+          ))}
         </div>
 
-        {/* Transactions Table */}
-        <div className="bg-white shadow rounded-xl p-6">
-          <h2 className="text-xl font-bold mb-4">Recent Transactions</h2>
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-200 text-left">
-                <th className="p-2">ID</th>
-                <th className="p-2">Amount</th>
-                <th className="p-2">Hour</th>
-                <th className="p-2">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.map((t) => (
-                <tr
-                  key={t.id}
-                  className="border-b hover:bg-gray-100 transition"
-                >
-                  <td className="p-2">{t.id}</td>
-                  <td className="p-2">${t.amount}</td>
-                  <td className="p-2">{t.hour}</td>
-                  <td
-                    className={`p-2 font-semibold ${
-                      t.status === "Fraud" ? "text-red-600" : "text-green-600"
-                    }`}
-                  >
-                    {t.status}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Pagination */}
+        <div className="flex justify-center items-center mt-6 gap-4">
+          <button
+            onClick={() => setPage(page - 1)}
+            disabled={page === 1}
+            className="px-4 py-2 bg-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-400 transition"
+          >
+            ⬅ Back
+          </button>
+          <span className="text-gray-700 font-medium">
+            Page {page} of {totalPages}
+          </span>
+          <button
+            onClick={() => setPage(page + 1)}
+            disabled={page === totalPages}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition"
+          >
+            Next ➡
+          </button>
         </div>
       </div>
     </div>
   );
-};
-
-export default Dashboard;
+}
